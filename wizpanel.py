@@ -4,19 +4,19 @@ import sys
 from time import time
 
 class ignore:
-  def write(self):
-    pass
+    def write(self, _):
+        pass
 
 sys.stderr = ignore()
 
 now = time()
 
 address = sys.argv[1]
-address = address if address[-1] == '/' else address+'/'
+address = address if address.endswith('/') else address + '/'
 
 async def check_range(session, start, end):
     tasks = []
-    chunk_size = (end - start) // int(sys.argv[2])
+    chunk_size = max(1, (end - start) // int(sys.argv[2]))
     for i in range(start, end, chunk_size):
         chunk_start = i
         chunk_end = i + chunk_size if i + chunk_size < end else end
@@ -29,15 +29,18 @@ async def check_range(session, start, end):
 async def check_range_chunk(session, start, end):
     for i in range(start, end):
         url = f'{address}wizpanel10{str(i).zfill(5)}/login.php'
-        async with session.get(url) as response:
-            if response.status == 200:
-                print(f'{address}wizpanel10{str(i).zfill(5)}')
-                print(time()-now)
-                exit()
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    print(f'{address}wizpanel10{str(i).zfill(5)}')
+                    print(time() - now)
+                    sys.exit()
+        except:
+            pass
 
 async def main():
     async with aiohttp.ClientSession() as session:
-        result = await check_range(session, 0, 100000)
+        await check_range(session, 0, 100000)
 
 if __name__ == "__main__":
     asyncio.run(main())
